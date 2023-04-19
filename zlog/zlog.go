@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/codeslala/igo/env"
+	"github.com/codeslala/igo/env/server"
 	"github.com/codeslala/igo/util"
 )
 
@@ -44,7 +45,7 @@ func (l *LogWriter) Write(close bool) {
 }
 
 func (l *LogWriter) filename(t time.Time) string {
-	return filepath.Join(l.logDir, t.Format(filenameFormat)+".log")
+	return filepath.Join(server.Config.LogDir, l.logDir, t.Format(filenameFormat)+".log")
 }
 
 func (l *LogWriter) rotate(t time.Time) error {
@@ -83,9 +84,11 @@ func (l *LogWriter) startTicker() {
 }
 
 type Config struct {
-	Info  *LogWriter
-	Error *LogWriter
-	Trace *LogWriter
+	Info    *LogWriter
+	Error   *LogWriter
+	Trace   *LogWriter
+	Warning *LogWriter
+	Datalog *LogWriter
 }
 
 func (c *Config) lockAndFlushAll() {
@@ -119,6 +122,29 @@ func (c *Config) lockAndFlushAll() {
 			syncWriteFile(l.writer, tmpBuf)
 		}
 	}
+
+	if c.Warning != nil {
+		l := c.Warning
+		l.mu.Lock()
+		defer l.mu.Unlock()
+		if len(c.Warning.buffer) > 0 {
+			tmpBuf := l.buffer
+			l.buffer = make([]string, 0, line)
+			syncWriteFile(l.writer, tmpBuf)
+		}
+	}
+
+	if c.Datalog != nil {
+		l := c.Datalog
+		l.mu.Lock()
+		defer l.mu.Unlock()
+		if len(c.Datalog.buffer) > 0 {
+			tmpBuf := l.buffer
+			l.buffer = make([]string, 0, line)
+			syncWriteFile(l.writer, tmpBuf)
+		}
+	}
+
 }
 
 var std *Config
@@ -135,14 +161,24 @@ func Trace(s string, sync bool) {
 	write(std.Trace, s, sync)
 }
 
+func Warning(s string, sync bool) {
+	write(std.Warning, s, sync)
+}
+
+func Datalog(s string, sync bool) {
+	write(std.Datalog, s, sync)
+}
+
 func write(l *LogWriter, s string, sync bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	t := time.Now()
 	log := s
-	if l.level != "" {
-		log = t.Format(timeFormat) + " [" + l.level + "] " + log
+	if l.level == "datalog" {
+		log = s
+	} else {
+		log = t.Format(timeFormat) + " [" + l.level + "] " + s
 	}
 	if l.writer == nil {
 		l.writer = &FileWriter{File: l.filename(t)}
@@ -208,6 +244,18 @@ func init() {
 			timeInterval: 10 * time.Minute,
 			level:        "trace",
 			logDir:       "trace",
+			buffer:       make([]string, 0, line),
+		},
+		Warning: &LogWriter{
+			timeInterval: 10 * time.Minute,
+			level:        "warning",
+			logDir:       "warning",
+			buffer:       make([]string, 0, line),
+		},
+		Datalog: &LogWriter{
+			timeInterval: 10 * time.Minute,
+			level:        "datalog",
+			logDir:       "datalog",
 			buffer:       make([]string, 0, line),
 		},
 	}
