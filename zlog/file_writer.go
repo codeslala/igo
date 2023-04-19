@@ -142,7 +142,7 @@ func CreateFileDir(files ...string) {
 		}
 		dir := filepath.Dir(file)
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-			must(err)
+			panic(err)
 		}
 		if err := os.Chmod(dir, os.ModePerm); err != nil {
 			panic(err)

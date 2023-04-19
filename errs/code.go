@@ -58,8 +58,8 @@ func (c Code) Wrap(err error) error {
 	}
 
 	return &Error{
-		RetCode: c,
-		RetMsg:  err.Error(),
+		Code: c,
+		Msg:  err.Error(),
 	}
 }
 
@@ -72,15 +72,15 @@ func (c Code) New(a ...string) error {
 		msg += s
 	}
 	return &Error{
-		RetCode: c,
-		RetMsg:  msg,
+		Code: c,
+		Msg:  msg,
 	}
 }
 
 func (c Code) Newf(msg string, args ...interface{}) error {
 	return &Error{
-		RetCode: c,
-		RetMsg:  fmt.Sprintf(msg, args...),
+		Code: c,
+		Msg:  fmt.Sprintf(msg, args...),
 	}
 }
 
@@ -90,5 +90,5 @@ func (c Code) Is(err error) bool {
 		// all other errors are internal error.
 		return c == Internal
 	}
-	return v.RetCode == c
+	return v.Code == c
 }
