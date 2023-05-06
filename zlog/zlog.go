@@ -260,3 +260,10 @@ func init() {
 		},
 	}
 }
+
+//将日志内容写入独立文件
+func FileLog(logStr, fileName string) {
+	finalFileName := filepath.Join(server.Config.LogDir, "filelog", fileName)
+	fileWriter := &FileWriter{File: finalFileName}
+	fileWriter.Write(util.StringToBytes(logStr))
+}

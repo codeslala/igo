@@ -15,4 +15,5 @@ func main() {
 	zlog.Error(fmt.Errorf("this is a test error log, err=%v", errors.New("error log")), true)
 	zlog.Warning("this is a test warning log", false)
 	zlog.Trace("this is a test trace log", false)
+	zlog.FileLog("ffjsfj3939jkkskf13333dkdkdknvnnddkd", "2023-05-06/1234.html")
 }
